@@ -1,263 +1,214 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/addons/p5.sound.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css" />
-    <meta charset="utf-8" />
-  </head>
-  <body>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/addons/p5.sound.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <meta charset="utf-8" />
+</head>
+<body>
 
 <!-- Loading new Artwork -->
-    <div id="loadingOverlay">
-      <div id="loadingSpinner"></div>
-      <div id="loadingText">Updating Artwork ...</div>
-  </div>
-  <!-- Loading new Artwork -->
+<div id="loadingOverlay">
+  <div id="loadingSpinner"></div>
+  <div id="loadingText">Updating Artwork ...</div>
+</div>
+<!-- Loading new Artwork -->
 
+<script src="./lib/olta.js"></script>
+<script>
+  const olta = Olta();
 
+  let sh, gl;
+  let vert, frag;
+  let mouseXRatio, mouseYRatio; // Ratio of mouse position to canvas size
+  let distortionStrength = 0.0; // Strength of distortion effect
 
-    <script src="./lib/olta.js"></script>
-    <script>
-      const olta = Olta();
+  let distortions = [];
+  let value;
 
-      let sh, gl;
-      let vert, frag;
-      let mouseXRatio, mouseYRatio; // Ratio of mouse position to canvas size
-      let distortionStrength = 0.0; // Strength of distortion effect
+  // Loading new Artwork
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  // Loading new Artwork
 
-      let distortions = [];
-      let value;
+  function preload() {
+    vert = `
+          attribute vec3 aPosition;
 
+          void main() {
+              vec4 pos = vec4(aPosition, 1.0);
+              pos.xy = pos.xy * 2.0 - 1.0;
+              gl_Position = pos;
+          }
+      `;
 
+    frag = `
+          #ifdef GL_ES
+          precision highp float;
+          #endif
 
-     // Loading new Artwork
-      const loadingOverlay = document.getElementById('loadingOverlay');
-      // Loading new Artwork
+          uniform vec2 u_resolution;
+          uniform float u_time;
+          uniform vec2 u_mouse; // Mouse position uniform
+          uniform float u_distortionStrength; // Distortion strength uniform
 
-      function preload() {
-        vert = `
-              attribute vec3 aPosition;
-
-              void main() {
-                  vec4 pos = vec4(aPosition, 1.0);
-                  pos.xy = pos.xy * 2.0 - 1.0;
-                  gl_Position = pos;
-              }
-          `;
-
-        frag = `
-              #ifdef GL_ES
-              precision highp float;
-              #endif
-
-              uniform vec2 u_resolution;
-              uniform float u_time;
-              uniform vec2 u_mouse; // Mouse position uniform
-              uniform float u_distortionStrength; // Distortion strength uniform
-
-              float random(in vec2 _st) {
-                  return fract(sin(dot(_st.xy, vec2(18.9898, 1.233))) * 43758.5423);
-              }
-
-              float noise(in vec2 _st) {
-                  vec2 i = floor(_st);
-                  vec2 f = fract(_st);
-                  float a = random(i);
-                  float b = random(i + vec2(1.0, 0.0));
-                  float c = random(i + vec2(0.0, 1.0));
-                  float d = random(i + vec2(1.0, 1.0));
-                  vec2 u = f * f * (1. * f);
-                  return mix(a, 1.*b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d- b) * u.x * u.y;
-              }
-
-              void main() {
-                  vec2 st = gl_FragCoord.xy /2. / u_resolution.xy * 4.;
-                  vec3 color = vec3(0.1);
-
-                  // Simulate Physarum movement with particles
-                  vec2 vel = vec2(noise(st + u_time/2.), noise(st * 14.1 - u_time/5.)*sin(u_time)*2.);
-
-      // Apply walking motion
-      float walkSpeed = 0.19; // Adjust the walking speed
-      float walkDistance = 5.1; // Adjust the walking distance
-      float walkOffset = sin(u_time * walkSpeed) * walkDistance;
-      vel.x += walkOffset;
-                  
-                  // Adjust velocity based on mouse position
-                  vel += normalize(u_mouse - st) * 0.5; // Adjust the multiplier to control the influence of the mouse
-                  
-                  // Apply distortion effect exactly at mouse position
-                  vec2 distortion = (u_mouse- st) * u_distortionStrength * vel.x; // Calculate distortion based on mouse position
-                  st -= distortion * vel.x;
-
-                vec2 newPos = st + vel * 0.4;
-                  float f = smoothstep(0.01, 3.6, noise(newPos));
-
-                  color = mix(vec3(0.1, .11, 0.2) * walkOffset/100., vec3(5.9,5.9, 5.9), f );
-
-                  gl_FragColor = vec4(color, .90);
-              }
-          `;
-      }
-
-      function setup() {
-        createCanvas(windowWidth, windowHeight, WEBGL);
-        noStroke();
-
-        gl = this.canvas.getContext("webgl");
-        // gl.disable(gl.DEPTH_TEST);
-
-        sh = createShader(vert, frag);
-
-        // Get all the distortions on refreshing the page
-        distortions = olta.getAll("distortions");
-
-        console.log("on setup");
-
-        // if no distortions were found, sets the distortion strength to 0
-        if (!distortions || distortions.length < 1) {
-          distortionStrength = 0.0;
-        } else {
-          // otherwise get the last element of the array's value and divide by 10 to transform to decimal
-          value = distortions[distortions.length - 1].value / 10;
-        }
-
-        // call the onUpdate function so it keeps updating
-        olta.onUpdate(() => {
-          distortions = olta.getAll("distortions");
-
-          // if no distortions were found, sets the distortion strength to 0
-          if (!distortions || distortions.length < 1) {
-            distortionStrength = 0.0;
-            return;
+          float random(in vec2 _st) {
+              return fract(sin(dot(_st.xy, vec2(18.9898, 1.233))) * 43758.5423);
           }
 
-          value = distortions[distortions.length - 1].value / 10;
+          float noise(in vec2 _st) {
+              vec2 i = floor(_st);
+              vec2 f = fract(_st);
+              float a = random(i);
+              float b = random(i + vec2(1.0, 0.0));
+              float c = random(i + vec2(0.0, 1.0));
+              float d = random(i + vec2(1.0, 1.0));
+              vec2 u = f * f * (1. * f);
+              return mix(a, 1.*b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d- b) * u.x * u.y;
+          }
 
-            // Loading new Artwork
-          setTimeout(() => {
-            loadingOverlay.style.display = 'none';
-          }, 100);
-           // Loading new Artwork
+          void main() {
+              vec2 st = gl_FragCoord.xy /2. / u_resolution.xy * 4.;
+              vec3 color = vec3(0.1);
 
-          // trigger p5 draw function
-          loop();
-        });
+              // Simulate Physarum movement with particles
+              vec2 vel = vec2(noise(st + u_time/2.), noise(st * 14.1 - u_time/5.)*sin(u_time)*2.);
 
+  // Apply walking motion
+  float walkSpeed = 0.19; // Adjust the walking speed
+  float walkDistance = 5.1; // Adjust the walking distance
+  float walkOffset = sin(u_time * walkSpeed) * walkDistance;
+  vel.x += walkOffset;
+              
+              // Adjust velocity based on mouse position
+              vel += normalize(u_mouse - st) * 0.5; // Adjust the multiplier to control the influence of the mouse
+              
+              // Apply distortion effect exactly at mouse position
+              vec2 distortion = (u_mouse- st) * u_distortionStrength * vel.x; // Calculate distortion based on mouse position
+              st -= distortion * vel.x;
 
-       
+            vec2 newPos = st + vel * 0.4;
+              float f = smoothstep(0.01, 3.6, noise(newPos));
 
+              color = mix(vec3(0.1, .11, 0.2) * walkOffset/100., vec3(5.9,5.9, 5.9), f );
 
+              gl_FragColor = vec4(color, .90);
+          }
+      `;
+  }
+
+  function setup() {
+    createCanvas(windowWidth, windowHeight, WEBGL);
+    noStroke();
+
+    gl = this.canvas.getContext("webgl");
+    // gl.disable(gl.DEPTH_TEST);
+
+    sh = createShader(vert, frag);
+
+    // Get all the distortions on refreshing the page
+    distortions = olta.getAll("distortions");
+
+    console.log("on setup");
+
+    // if no distortions were found, sets the distortion strength to 0
+    if (!distortions || distortions.length < 1) {
+      distortionStrength = 0.0;
+    } else {
+      // otherwise get the last element of the array's value and divide by 10 to transform to decimal
+      value = distortions[distortions.length - 1].value / 10;
+    }
+
+    // call the onUpdate function so it keeps updating
+    olta.onUpdate(() => {
+      distortions = olta.getAll("distortions");
+
+      // if no distortions were found, sets the distortion strength to 0
+      if (!distortions || distortions.length < 1) {
+        distortionStrength = 0.0;
+        return;
       }
 
-      function draw() {
-        mouseXRatio = mouseX / width;
-        mouseYRatio = mouseY / height;
-
-        if (value && !isDragging) {
-          // added the isDragging verification so it changes only when effect is off
-          // Updating the required Variable to the last state value
-          console.log("Current distortion value:", value); // you can delete this line, it just shows you the current value of distortion
-          distortionStrength = value;
-        }
-
-        shader(sh);
-
-        sh.setUniform("u_resolution", [width, height]);
-        sh.setUniform("u_time", millis() / 1000.0);
-        sh.setUniform("u_mouse", [mouseXRatio * 2.0, mouseYRatio * 2.0]); // Scale mouse position to match the simulation space
-        sh.setUniform("u_distortionStrength", distortionStrength);
-
-        rect(0, 0, width, height);
-      }
-
-      function windowResized() {
-        resizeCanvas(windowWidth, windowHeight);
-      }
-
-      let isDragging = false;
-
-      function mousePressed() {
-        isDragging = true;
-        console.log("is dragging");
-      }
-
-      function mouseDragged() {
-        // Update distortion only when dragging
-        if (isDragging) {
-          mouseXRatio = mouseX / width;
-          mouseYRatio = mouseY / height;
-          distortionStrength = 2.5;
-        }
-      }
-
-      function mouseReleased() {
-
-        isDragging = false;
-        // Stop distortion when mouse is released was disabled since draw loop already updates it
-        // distortionStrength = 0.0;
+      value = distortions[distortions.length - 1].value / 10;
 
         // Loading new Artwork
-        loadingOverlay.style.display = 'block';
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+      }, 100);
+       // Loading new Artwork
 
-        const newDistortion = {
-          value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
-        };
-        olta.create("distortions", newDistortion);
+      // trigger p5 draw function
+      loop();
+    });
+  }
 
-        console.log("mouseReleased");
-      }
+  function draw() {
+    mouseXRatio = mouseX / width;
+    mouseYRatio = mouseY / height;
 
+    if (value && !isDragging) {
+      // added the isDragging verification so it changes only when effect is off
+      // Updating the required Variable to the last state value
+      console.log("Current distortion value:", value); // you can delete this line, it just shows you the current value of distortion
+      distortionStrength = value;
+    }
 
+    shader(sh);
 
-      function keyPressed() {
-        if (key === "d" || key === "D") {
-          mouseXRatio = false;
-          mouseYRatio = false;
+    sh.setUniform("u_resolution", [width, height]);
+    sh.setUniform("u_time", millis() / 1000.0);
+    sh.setUniform("u_mouse", [mouseXRatio * 2.0, mouseYRatio * 2.0]); // Scale mouse position to match the simulation space
+    sh.setUniform("u_distortionStrength", distortionStrength);
 
-          // doesn't hold the value since draw function is updating it. "keyPressed" variable could be implemented if needed
-          distortionStrength = 20;
+    rect(0, 0, width, height);
+  }
 
-          let isDragging = false;
-        }
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+  }
 
-        if (key === "p" || key === "P") {
-          noLoop();
-        }
+  let isDragging = false;
 
-        if (key === "l" || key === "L") {
-          loop();
-        }
+  function mousePressed() {
+    isDragging = true;
+    console.log("is dragging");
+  }
 
-        //   if (key === 's') { // Commented out since was breaking the application
-        //     saveGif('mySketch', 4);
-        //   }
-      }
+  function mouseDragged() {
+    // Update distortion only when dragging
+    if (isDragging) {
+      mouseXRatio = mouseX / width;
+      mouseYRatio = mouseY / height;
+      distortionStrength = 2.5;
+    }
+  }
 
+  function mouseReleased() {
 
+    isDragging = false;
 
-      function touchStarted() {
+    // Loading new Artwork
+    loadingOverlay.style.display = 'block';
 
-        let distortions = [];
-        let value;
+    const newDistortion = {
+      value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
+    };
+    olta.create("distortions", newDistortion);
 
-        // Loading new Artwork
-        loadingOverlay.style.display = 'block';
+    console.log("mouseReleased");
+  }
 
-        // olta.Create function could be called inside here as well
-        distortionStrength = 20;
-        
+  function touchStarted() {
+    // Loading new Artwork
+    loadingOverlay.style.display = 'block';
 
-         const newDistortion = {
-          value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
-        };
+    const newDistortion = {
+      value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
+    };
+    olta.create("distortions", newDistortion);
 
-        olta.create("distortions", newDistortion);
-        
-        console.log("Mobile Device Screen touched");
-       
-      }
-    </script>
-  </body>
+    console.log("Mobile Device Screen touched");
+  }
+</script>
+</body>
 </html>
