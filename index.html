@@ -29,6 +29,8 @@
       let distortions = [];
       let value;
 
+
+
      // Loading new Artwork
       const loadingOverlay = document.getElementById('loadingOverlay');
       // Loading new Artwork
@@ -196,16 +198,16 @@
         // Stop distortion when mouse is released was disabled since draw loop already updates it
         // distortionStrength = 0.0;
 
-
         // Loading new Artwork
         loadingOverlay.style.display = 'block';
-         // Loading new Artwork
 
         const newDistortion = {
           value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
         };
         olta.create("distortions", newDistortion);
       }
+
+
 
       function keyPressed() {
         if (key === "d" || key === "D") {
@@ -231,23 +233,25 @@
         //   }
       }
 
+
+
       function touchStarted() {
+
+        let distortions = [];
+        let value;
 
         // Loading new Artwork
         loadingOverlay.style.display = 'block';
-         // Loading new Artwork
 
-          // olta.Create function could be called inside here as well
-        distortionStrength = 20.1;
-        console.log("Screen touched");
-
+        // olta.Create function could be called inside here as well
+        distortionStrength = 20;
+        console.log("Mobile Device Screen touched");
 
          const newDistortion = {
           value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
         };
+
         olta.create("distortions", newDistortion);
-
-
        
       }
     </script>
