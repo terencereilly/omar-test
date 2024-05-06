@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/p5.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/addons/p5.sound.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.1/addons/p5.sound.min.js"></script> -->
   <link rel="stylesheet" type="text/css" href="style.css" />
   <meta charset="utf-8" />
 </head>
@@ -13,7 +13,6 @@
   <div id="loadingSpinner"></div>
   <div id="loadingText">Updating Artwork ...</div>
 </div>
-<!-- Loading new Artwork -->
 
 <script src="./lib/olta.js"></script>
 <script>
@@ -29,7 +28,6 @@
 
   // Loading new Artwork
   const loadingOverlay = document.getElementById('loadingOverlay');
-  // Loading new Artwork
 
   function preload() {
     vert = `
@@ -185,34 +183,33 @@
 
   function mouseReleased() {
 
-    isDragging = false;
+      isDragging = false;
 
-    // Loading new Artwork
-    loadingOverlay.style.display = 'block';
+      loadingOverlay.style.display = 'block';
 
-    const newDistortion = {
-      value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
-    };
-    olta.create("distortions", newDistortion);
+      const newDistortion = {
+        value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
+      };
+      olta.create("distortions", newDistortion);
 
-    console.log("mouseReleased");
-  }
+      console.log("mouseReleased");
+    }
+
+
 
   function touchStarted() {
 
+      isDragging = false;
 
-    isDragging = false;
-    
-    // Loading new Artwork
-    loadingOverlay.style.display = 'block';
+      loadingOverlay.style.display = 'block';
 
-    const newDistortion = {
-      value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
-    };
-    olta.create("distortions", newDistortion);
+      const newDistortion = {
+        value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
+      };
+      olta.create("distortions", newDistortion);
 
-    console.log("Mobile Device Screen touched");
-  }
+      console.log("Mobile Device Screen touched");
+    }
 
 </script>
 </body>
