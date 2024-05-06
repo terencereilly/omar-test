@@ -237,6 +237,10 @@
         loadingOverlay.style.display = 'block';
          // Loading new Artwork
 
+          // olta.Create function could be called inside here as well
+        distortionStrength = 20.1;
+        console.log("Screen touched");
+
 
          const newDistortion = {
           value: Math.floor(Math.random() * 256), // Creating a new distortion value with range from 0 to 255 (can be changed)
@@ -244,9 +248,7 @@
         olta.create("distortions", newDistortion);
 
 
-        // olta.Create function could be called inside here as well
-        distortionStrength = 20.1;
-        console.log("Screen touched");
+       
       }
     </script>
   </body>
